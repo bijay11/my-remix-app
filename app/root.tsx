@@ -1,5 +1,6 @@
 import { LinksFunction } from '@remix-run/node';
 import {
+  Link,
   Links,
   Meta,
   Outlet,
@@ -28,7 +29,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <Link to="/">Access Notes</Link>
+        <hr />
+        <div className="p-4">{children}</div>
+        <hr />
+        <Link to="/">Access Notes</Link>
         <ScrollRestoration />
         <Scripts />
       </body>

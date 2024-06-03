@@ -1,7 +1,12 @@
+import { Link } from '@remix-run/react';
+
 export default function UsersBijayRoute() {
   return (
-    <>
-      <h1>Bijay</h1>
-    </>
+    <div>
+      <h1>
+        <strong>Bijay</strong>
+      </h1>
+      <Link to="notes">Notes</Link>
+    </div>
   );
 }
