@@ -11,7 +11,7 @@ import tailwindStylesUrl from './styles/tailwind.css?url';
 
 export const links: LinksFunction = () => {
   return [
-    { rel: 'icon', type: 'image/svg+xml', href: './favicon.svg' },
+    // { rel: 'icon', type: 'image/svg+xml', href: './favicon.svg' },
     { rel: 'stylesheet', href: fontStylesUrl },
     { rel: 'stylesheet', href: tailwindStylesUrl },
   ];

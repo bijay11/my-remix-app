@@ -1,8 +1,9 @@
 import { Outlet } from '@remix-run/react';
-export default function UsersRoute() {
+
+export default function NotesRoute() {
   return (
     <>
-      <p>Users Route</p>
+      <h1>Notes</h1>
       <Outlet />
     </>
   );
