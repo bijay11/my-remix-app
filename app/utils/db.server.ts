@@ -32,14 +32,14 @@ export const db = singleton('db', () => {
     },
   });
 
-  const kody = db.user.create({
+  const user = db.user.create({
     id: '9d6eba59daa2fc2078cf8205cd451041',
-    email: 'kody@kcd.dev',
-    username: 'kody',
-    name: 'Kody',
+    email: 'johndoe@test.dev',
+    username: 'johndoe',
+    name: 'John',
   });
 
-  const kodyNotes = [
+  const userNotes = [
     {
       id: 'd27a197e',
       title: 'Basic Koala Facts',
@@ -115,10 +115,10 @@ export const db = singleton('db', () => {
     },
   ];
 
-  for (const note of kodyNotes) {
+  for (const note of userNotes) {
     db.note.create({
       ...note,
-      owner: kody,
+      owner: user,
     });
   }
 
