@@ -1,7 +1,7 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node';
 import { Link, Outlet, NavLink, useLoaderData } from '@remix-run/react';
 import { db } from '#app/utils/db.server.js';
-import { cn } from '#app/utils/misc.js';
+import { cn, invariantResponse } from '#app/utils/misc.js';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { username } = params;
@@ -23,12 +23,15 @@ export async function loader({ params }: LoaderFunctionArgs) {
       },
     },
   });
+
+  invariantResponse(owner, 'Owner not found', { status: 404 });
+
   return json({
     owner: {
       name: owner.name,
       username: owner.username,
     },
-    notes: notes.map((note) => ({ id: note.id, title: note.title })),
+    notes: notes.map(({ id, title }) => ({ id, title })),
   });
 }
 

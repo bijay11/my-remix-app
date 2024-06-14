@@ -1,4 +1,5 @@
 import { db } from '#app/utils/db.server.js';
+import { invariantResponse } from '#app/utils/misc.js';
 import { json, type LoaderFunctionArgs } from '@remix-run/node';
 import { useLoaderData } from '@remix-run/react';
 
@@ -13,7 +14,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
     },
   });
 
-  return json({ note });
+  invariantResponse(note, 'Note not found', { status: 404 });
+
+  return json({
+    note: {
+      title: note.title,
+      content: note.content,
+    },
+  });
 }
 
 export default function SomeNoteId() {
