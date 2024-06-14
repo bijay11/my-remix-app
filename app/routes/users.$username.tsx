@@ -20,7 +20,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function UsernameRoute() {
   const data = useLoaderData<typeof loader>();
-  console.log('===test data', data.user);
+
   return (
     <div>
       <h1>
