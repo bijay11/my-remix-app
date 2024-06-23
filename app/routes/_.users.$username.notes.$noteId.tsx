@@ -26,7 +26,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   });
 }
 
-export default function SomeNoteId() {
+export default function NoteRoute() {
   const { note } = useLoaderData<typeof loader>();
   return (
     <div className="absolute inset-0 flex flex-col px-10">
