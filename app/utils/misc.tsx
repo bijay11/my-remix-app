@@ -27,14 +27,14 @@ export function cn(...inputs: ClassValue[]) {
 export function invariantResponse(
   condition: any,
   message?: string | (() => string),
-  resonseInit?: ResponseInit
+  responseInit?: ResponseInit
 ): asserts condition {
   if (!condition) {
     throw new Response(
       typeof message === 'function'
         ? message()
         : message || 'An invariant failed, please provide a message',
-      { status: 400, ...resonseInit }
+      { status: 400, ...responseInit }
     );
   }
 }

@@ -34,9 +34,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const title = formData.get('title');
   const content = formData.get('content');
 
+  invariantResponse(typeof title === 'string', 'Title must be a string', {
+    status: 400,
+  });
+  invariantResponse(typeof content === 'string', 'Content must be a string', {
+    status: 400,
+  });
+
   db.note.update({
     where: { id: { equals: params.noteId } },
-    // @ts-expect-error 🦺 we'll fix this next...
     data: { title, content },
   });
 
@@ -55,7 +61,7 @@ export default function NoteEdit() {
         <div>
           {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
           <Label>Title</Label>
-          <Input name="title" defaultValue={data.note.title} />
+          <Input name="ttle" defaultValue={data.note.title} />
         </div>
         <div>
           {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
