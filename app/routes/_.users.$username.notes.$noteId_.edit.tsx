@@ -37,6 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   invariantResponse(typeof title === 'string', 'Title must be a string', {
     status: 400,
   });
+
   invariantResponse(typeof content === 'string', 'Content must be a string', {
     status: 400,
   });

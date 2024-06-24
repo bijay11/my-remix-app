@@ -31,9 +31,19 @@ export async function loader({ params }: LoaderFunctionArgs) {
   });
 }
 
-export async function action({ params }: ActionFunctionArgs) {
-  db.note.delete({ where: { id: { equals: params.noteId } } });
-  return redirect(`/users/${params.username}/notes`);
+export async function action({ request, params }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const intent = formData.get('intent');
+
+  switch (intent) {
+    case 'delete': {
+      db.note.delete({ where: { id: { equals: params.noteId } } });
+      return redirect(`/users/${params.username}/notes`);
+    }
+    default: {
+      throw new Response(`Invalid intent: ${intent}`, { status: 400 });
+    }
+  }
 }
 
 export default function NoteRoute() {
@@ -48,7 +58,12 @@ export default function NoteRoute() {
       </div>
       <div className={floatingToolbarClassName}>
         <Form method="POST">
-          <Button variant="destructive" type="submit">
+          <Button
+            variant="destructive"
+            type="submit"
+            name="intent"
+            value="delete"
+          >
             Delete
           </Button>
         </Form>
