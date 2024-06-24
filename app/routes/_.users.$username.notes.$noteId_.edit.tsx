@@ -1,11 +1,17 @@
-import { LoaderFunctionArgs, json } from '@remix-run/node';
+import {
+  json,
+  redirect,
+  type LoaderFunctionArgs,
+  ActionFunctionArgs,
+} from '@remix-run/node';
 import { Form, useLoaderData } from '@remix-run/react';
-import { db } from '#app/utils/db.server.js';
-import { invariantResponse } from '#app/utils/misc.js';
-import { Label } from '#app/components/ui/label';
-import { Input } from '#app/components/ui/input';
-import { floatingToolbarClassName } from '#app/components/floating-toolbar.js';
+import { floatingToolbarClassName } from '#app/components/floating-toolbar';
 import { Button } from '#app/components/ui/button';
+import { Input } from '#app/components/ui/input';
+import { Label } from '#app/components/ui/label';
+import { Textarea } from '#app/components/ui/textarea';
+import { db } from '#app/utils/db.server';
+import { invariantResponse } from '#app/utils/misc';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const note = db.note.findFirst({
@@ -19,15 +25,26 @@ export async function loader({ params }: LoaderFunctionArgs) {
   invariantResponse(note, 'Note not found', { status: 404 });
 
   return json({
-    note: {
-      title: note.title,
-      content: note.content,
-    },
+    note: { title: note.title, content: note.content },
   });
 }
 
+export async function action({ request, params }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const title = formData.get('title');
+  const content = formData.get('content');
+
+  db.note.update({
+    where: { id: { equals: params.noteId } },
+    // @ts-expect-error 🦺 we'll fix this next...
+    data: { title, content },
+  });
+
+  return redirect(`/users/${params.username}/notes/${params.noteId}`);
+}
+
 export default function NoteEdit() {
-  const { note } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
 
   return (
     <Form
@@ -36,12 +53,14 @@ export default function NoteEdit() {
     >
       <div className="flex flex-col gap-1">
         <div>
+          {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
           <Label>Title</Label>
-          <Input name="title" defaultValue={note.title} />
+          <Input name="title" defaultValue={data.note.title} />
         </div>
         <div>
+          {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
           <Label>Content</Label>
-          <Input name="title" defaultValue={note.content} />
+          <Textarea name="content" defaultValue={data.note.content} />
         </div>
       </div>
       <div className={floatingToolbarClassName}>
