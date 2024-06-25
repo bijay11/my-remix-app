@@ -22,14 +22,16 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function UsernameRoute() {
-  const data = useLoaderData<typeof loader>();
+  const { user } = useLoaderData<typeof loader>();
 
   return (
     <div>
       <h1>
-        <strong>{data.user.name ?? data.user.username}</strong>
+        <strong>{user.name ?? user.username}</strong>
       </h1>
-      <Link to="notes">Notes</Link>
+      <Link to="notes" className="underline" prefetch="intent">
+        Notes
+      </Link>
     </div>
   );
 }
