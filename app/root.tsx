@@ -1,4 +1,5 @@
-import { LinksFunction } from '@remix-run/node';
+import os from 'node:os';
+import { json, type LinksFunction } from '@remix-run/node';
 import {
   Link,
   Links,
@@ -6,9 +7,11 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from '@remix-run/react';
 import fontStylesUrl from './styles/font.css?url';
 import tailwindStylesUrl from './styles/tailwind.css?url';
+import { getEnv } from './utils/env.server';
 
 export const links: LinksFunction = () => {
   return [
@@ -18,7 +21,13 @@ export const links: LinksFunction = () => {
   ];
 };
 
+export async function loader() {
+  return json({ username: os.userInfo().username, ENV: getEnv() });
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useLoaderData<typeof loader>();
+  console.log('===test env', { ENV: data.ENV });
   return (
     <html lang="en">
       <head>
@@ -35,6 +44,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <hr />
         <Link to="/">Access Notes</Link>
         <ScrollRestoration />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV=${JSON.stringify(data.ENV)}`,
+          }}
+        ></script>
         <Scripts />
       </body>
     </html>
