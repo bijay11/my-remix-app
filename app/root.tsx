@@ -27,7 +27,6 @@ export async function loader() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useLoaderData<typeof loader>();
-  console.log('===test env', { ENV: data.ENV });
   return (
     <html lang="en">
       <head>
