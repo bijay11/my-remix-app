@@ -14,6 +14,7 @@ import { db } from '#app/utils/db.server';
 import { invariantResponse, useIsSubmitting } from '#app/utils/misc';
 import { StatusButton } from '#app/components/ui/status-button.js';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
+import { useEffect, useState } from 'react';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const note = db.note.findFirst({
@@ -108,6 +109,13 @@ function ErrorList({ errors }: { errors?: string[] | null }) {
   ) : null;
 }
 
+function useHydrated() {
+  const [hyrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
+  return hyrated;
+}
+
 export default function NoteEdit() {
   const data = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
@@ -120,13 +128,15 @@ export default function NoteEdit() {
   const formErrors =
     actionData?.status === 'error' ? actionData?.errors?.formErrors : null;
 
+  const isHydrated = useHydrated();
+
   return (
     <div className="absolute inset-0">
       <Form
         id={formId}
         method="POST"
         className="flex h-full flex-col gap-y-4 overflow-x-hidden px-10 pb-28 pt-12"
-        noValidate
+        noValidate={isHydrated}
       >
         <div className="flex flex-col gap-1">
           <div>
