@@ -9,6 +9,7 @@ import { Button } from '#app/components/ui/button';
 import { db } from '#app/utils/db.server.js';
 import { invariantResponse } from '#app/utils/misc.js';
 import { floatingToolbarClassName } from '#app/components/floating-toolbar';
+import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { noteId } = params;
@@ -72,5 +73,17 @@ export default function NoteRoute() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export function ErrorBoundary() {
+  return (
+    <GeneralErrorBoundary
+      statusHandlers={{
+        404: ({ params }) => {
+          return <p>No note found with the id {`"${params.noteId}"`}</p>;
+        },
+      }}
+    />
   );
 }

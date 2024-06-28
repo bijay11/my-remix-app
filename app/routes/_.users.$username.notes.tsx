@@ -2,6 +2,7 @@ import { json, type LoaderFunctionArgs } from '@remix-run/node';
 import { Link, Outlet, NavLink, useLoaderData } from '@remix-run/react';
 import { db } from '#app/utils/db.server.js';
 import { cn, invariantResponse } from '#app/utils/misc.js';
+import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { username } = params;
@@ -79,5 +80,17 @@ export default function NotesRoute() {
         </div>
       </div>
     </main>
+  );
+}
+
+export function ErrorBoundary() {
+  return (
+    <GeneralErrorBoundary
+      statusHandlers={{
+        404: ({ params }) => {
+          return <p>No user notes for the {params.username} found.</p>;
+        },
+      }}
+    />
   );
 }

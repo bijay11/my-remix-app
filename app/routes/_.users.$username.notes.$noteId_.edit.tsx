@@ -18,6 +18,7 @@ import { Textarea } from '#app/components/ui/textarea';
 import { db } from '#app/utils/db.server';
 import { invariantResponse } from '#app/utils/misc';
 import { StatusButton } from '#app/components/ui/status-button.js';
+import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const note = db.note.findFirst({
@@ -95,5 +96,17 @@ export default function NoteEdit() {
         </StatusButton>
       </div>
     </Form>
+  );
+}
+
+export function ErrorBoundary() {
+  return (
+    <GeneralErrorBoundary
+      statusHandlers={{
+        404: ({ params }) => {
+          return <p>No note found with the id {`"${params.noteId}"`}</p>;
+        },
+      }}
+    />
   );
 }

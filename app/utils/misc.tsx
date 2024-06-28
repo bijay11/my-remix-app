@@ -29,8 +29,6 @@ export function invariantResponse(
   message?: string | (() => string),
   responseInit?: ResponseInit
 ): asserts condition {
-  console.log('===condition', condition);
-  console.log('===i am here');
   if (!condition) {
     throw new Response(
       typeof message === 'function'
@@ -39,4 +37,21 @@ export function invariantResponse(
       { status: 400, ...responseInit }
     );
   }
+}
+
+/**
+ * Returns a string error message from an unknown error.
+ */
+export function getErrorMessage(error: unknown) {
+  if (typeof error === 'string') return error;
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+  console.log('Unable to get error message for the error', error);
+  return 'Unknown Error';
 }
