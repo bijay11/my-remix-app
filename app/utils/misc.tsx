@@ -29,6 +29,8 @@ export function invariantResponse(
   message?: string | (() => string),
   responseInit?: ResponseInit
 ): asserts condition {
+  console.log('===condition', condition);
+  console.log('===i am here');
   if (!condition) {
     throw new Response(
       typeof message === 'function'

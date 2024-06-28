@@ -9,7 +9,7 @@ import { startTransition, StrictMode } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 
 if (ENV.MODE === 'development') {
-  await import('./utils//devtools').then(({ init }) => init());
+  await import('./utils/devtools').then(({ init }) => init());
 }
 
 startTransition(() => {
