@@ -4,19 +4,14 @@ import {
   type LoaderFunctionArgs,
   ActionFunctionArgs,
 } from '@remix-run/node';
-import {
-  Form,
-  useFormAction,
-  useLoaderData,
-  useNavigation,
-} from '@remix-run/react';
+import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { floatingToolbarClassName } from '#app/components/floating-toolbar';
 import { Button } from '#app/components/ui/button';
 import { Input } from '#app/components/ui/input';
 import { Label } from '#app/components/ui/label';
 import { Textarea } from '#app/components/ui/textarea';
 import { db } from '#app/utils/db.server';
-import { invariantResponse } from '#app/utils/misc';
+import { invariantResponse, useIsSubmitting } from '#app/utils/misc';
 import { StatusButton } from '#app/components/ui/status-button.js';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
 
@@ -36,6 +31,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
   });
 }
 
+const titleMaxLength = 100;
+const contentMaxLength = 10000;
+
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const title = formData.get('title');
@@ -49,6 +47,47 @@ export async function action({ request, params }: ActionFunctionArgs) {
     status: 400,
   });
 
+  // action runs only on server so adding validation on Server Side
+  const errors = {
+    formErrors: [] as string[],
+    fieldErros: {
+      title: [] as string[],
+      content: [] as string[],
+    },
+  };
+
+  if (title === '') {
+    errors.fieldErros.title.push('Title is required.');
+  }
+
+  if (title.length > titleMaxLength) {
+    errors.fieldErros.title.push(
+      `Title must be ${titleMaxLength} characters or less.`
+    );
+  }
+
+  if (content === '') {
+    errors.fieldErros.content.push('Content is required.');
+  }
+
+  if (content.length > contentMaxLength) {
+    errors.fieldErros.content.push(
+      `Content must be ${titleMaxLength} characters or less.`
+    );
+  }
+
+  const hasErrors =
+    errors.formErrors.length > 0 ||
+    Object.values(errors.fieldErros).some(
+      (fieldErrors) => fieldErrors.length > 0
+    );
+
+  if (hasErrors) {
+    return json({ status: 'error', errors } as const, {
+      status: 400,
+    });
+  }
+
   db.note.update({
     where: { id: { equals: params.noteId } },
     data: { title, content },
@@ -57,45 +96,85 @@ export async function action({ request, params }: ActionFunctionArgs) {
   return redirect(`/users/${params.username}/notes/${params.noteId}`);
 }
 
+function ErrorList({ errors }: { errors?: string[] | null }) {
+  return errors?.length ? (
+    <ul>
+      {errors.map((error, i) => (
+        <li key={i} className="text-[10px] text-foreground-destructive">
+          {error}
+        </li>
+      ))}
+    </ul>
+  ) : null;
+}
+
 export default function NoteEdit() {
   const data = useLoaderData<typeof loader>();
-  const navigation = useNavigation();
-  const formAction = useFormAction();
-  const isPending =
-    navigation.state !== 'idle' &&
-    navigation.formAction === formAction &&
-    navigation.formMethod === 'POST';
+  const actionData = useActionData<typeof action>();
+
+  const isSubmitting = useIsSubmitting();
+  const formId = 'note-editor';
+
+  const fieldErrors =
+    actionData?.status === 'error' ? actionData?.errors?.fieldErros : null;
+  const formErrors =
+    actionData?.status === 'error' ? actionData?.errors?.formErrors : null;
 
   return (
-    <Form
-      method="POST"
-      className="flex h-full flex-col gap-y-4 overflow-x-hidden px-10 pb-28 pt-12"
-    >
-      <div className="flex flex-col gap-1">
-        <div>
-          {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
-          <Label>Title</Label>
-          <Input name="title" defaultValue={data.note.title} />
+    <div className="absolute inset-0">
+      <Form
+        id={formId}
+        method="POST"
+        className="flex h-full flex-col gap-y-4 overflow-x-hidden px-10 pb-28 pt-12"
+        noValidate
+      >
+        <div className="flex flex-col gap-1">
+          <div>
+            {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
+            <Label>Title</Label>
+            <Input
+              name="title"
+              defaultValue={data.note.title}
+              required
+              maxLength={titleMaxLength}
+            />
+            <div className="min-h-[32px] px-4 pb-4 pt-1">
+              <ErrorList errors={fieldErrors?.title} />
+            </div>
+          </div>
+          <div>
+            {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
+            <Label>Content</Label>
+            <Textarea
+              name="content"
+              defaultValue={data.note.content}
+              required
+              maxLength={contentMaxLength}
+            />
+            <div className="min-h-[32px] px-4 pb-4 pt-1">
+              <ErrorList errors={fieldErrors?.content} />
+            </div>
+          </div>
         </div>
-        <div>
-          {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
-          <Label>Content</Label>
-          <Textarea name="content" defaultValue={data.note.content} />
+
+        <div className="min-h-[32px] px-4 pb-4 pt-1">
+          <ErrorList errors={formErrors} />
         </div>
-      </div>
+      </Form>
       <div className={floatingToolbarClassName}>
         <Button variant="destructive" type="reset">
           Reset
         </Button>
         <StatusButton
           type="submit"
-          disabled={isPending}
-          status={isPending ? 'pending' : 'idle'}
+          form={formId}
+          disabled={isSubmitting}
+          status={isSubmitting ? 'pending' : 'idle'}
         >
           Submit
         </StatusButton>
       </div>
-    </Form>
+    </div>
   );
 }
 

@@ -1,3 +1,4 @@
+import { useFormAction, useNavigation } from '@remix-run/react';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -54,4 +55,21 @@ export function getErrorMessage(error: unknown) {
   }
   console.log('Unable to get error message for the error', error);
   return 'Unknown Error';
+}
+
+export function useIsSubmitting({
+  formAction,
+  formMethod = 'POST',
+}: {
+  formAction?: string;
+  formMethod?: 'POST' | 'GET' | 'PUT' | 'PATCH' | 'DELETE';
+} = {}) {
+  const contextualFormAction = useFormAction();
+  const navigation = useNavigation();
+
+  return (
+    navigation.state === 'submitting' &&
+    navigation.formAction === (formAction ?? contextualFormAction) &&
+    navigation.formMethod === formMethod
+  );
 }
