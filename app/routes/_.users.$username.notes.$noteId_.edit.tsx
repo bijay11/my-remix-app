@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState, useId } from 'react';
 import {
   json,
   redirect,
@@ -14,7 +15,14 @@ import { db } from '#app/utils/db.server';
 import { invariantResponse, useIsSubmitting } from '#app/utils/misc';
 import { StatusButton } from '#app/components/ui/status-button.js';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
-import { useEffect, useId, useState } from 'react';
+
+type ActionErrors = {
+  formErrors: Array<string>;
+  fieldErrors: {
+    title: Array<string>;
+    content: Array<string>;
+  };
+};
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const note = db.note.findFirst({
@@ -49,37 +57,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   // action runs only on server so adding validation on Server Side
-  const errors = {
-    formErrors: [] as string[],
-    fieldErros: {
-      title: [] as string[],
-      content: [] as string[],
+  const errors: ActionErrors = {
+    formErrors: [],
+    fieldErrors: {
+      title: [],
+      content: [],
     },
   };
 
   if (title === '') {
-    errors.fieldErros.title.push('Title is required.');
+    errors.fieldErrors.title.push('Title is required.');
   }
 
   if (title.length > titleMaxLength) {
-    errors.fieldErros.title.push(
+    errors.fieldErrors.title.push(
       `Title must be ${titleMaxLength} characters or less.`
     );
   }
 
   if (content === '') {
-    errors.fieldErros.content.push('Content is required.');
+    errors.fieldErrors.content.push('Content is required.');
   }
 
   if (content.length > contentMaxLength) {
-    errors.fieldErros.content.push(
+    errors.fieldErrors.content.push(
       `Content must be ${titleMaxLength} characters or less.`
     );
   }
 
   const hasErrors =
     errors.formErrors.length > 0 ||
-    Object.values(errors.fieldErros).some(
+    Object.values(errors.fieldErrors).some(
       (fieldErrors) => fieldErrors.length > 0
     );
 
@@ -117,15 +125,16 @@ function useHydrated() {
 }
 
 export default function NoteEdit() {
+  const formRef = useRef<HTMLFormElement>(null);
   const data = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-
   const isSubmitting = useIsSubmitting();
-  const formId = 'note-editor';
   const titleId = useId();
 
+  const formId = 'note-editor';
+
   const fieldErrors =
-    actionData?.status === 'error' ? actionData?.errors?.fieldErros : null;
+    actionData?.status === 'error' ? actionData?.errors?.fieldErrors : null;
   const formErrors =
     actionData?.status === 'error' ? actionData?.errors?.formErrors : null;
 
@@ -138,15 +147,33 @@ export default function NoteEdit() {
   const contentHasErrors = Boolean(fieldErrors?.content.length);
   const contentErrorId = contentHasErrors ? 'content-error' : undefined;
 
+  useEffect(() => {
+    const formEl = formRef.current;
+    if (!formEl) return;
+    if (actionData?.status !== 'error') return;
+
+    if (formEl.matches('[aria-invalid="true"]')) {
+      formEl.focus();
+    } else {
+      const firstInvalidField = formEl.querySelector('[aria-invalid="true"]');
+
+      if (firstInvalidField instanceof HTMLElement) {
+        firstInvalidField.focus();
+      }
+    }
+  }, [actionData]);
+
   return (
     <div className="absolute inset-0">
       <Form
         id={formId}
+        ref={formRef}
         method="POST"
         className="flex h-full flex-col gap-y-4 overflow-x-hidden px-10 pb-28 pt-12"
         noValidate={isHydrated}
         aria-invalid={formHasErrors || undefined}
         aria-describedby={formErrorId}
+        tabIndex={-1}
       >
         <div className="flex flex-col gap-1">
           <div>
@@ -159,6 +186,7 @@ export default function NoteEdit() {
               maxLength={titleMaxLength}
               aria-invalid={titleHasErrors || undefined}
               aria-describedby={titleErrorId}
+              autoFocus
             />
             <div className="min-h-[32px] px-4 pb-4 pt-1">
               <ErrorList id={titleErrorId} errors={fieldErrors?.title} />
