@@ -6,23 +6,16 @@ import {
   ActionFunctionArgs,
 } from '@remix-run/node';
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
+import { z } from 'zod';
 import { floatingToolbarClassName } from '#app/components/floating-toolbar';
 import { Button } from '#app/components/ui/button';
 import { Input } from '#app/components/ui/input';
 import { Label } from '#app/components/ui/label';
 import { Textarea } from '#app/components/ui/textarea';
-import { db } from '#app/utils/db.server';
+import { db, updateNote } from '#app/utils/db.server';
 import { invariantResponse, useIsSubmitting } from '#app/utils/misc';
 import { StatusButton } from '#app/components/ui/status-button.js';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
-
-type ActionErrors = {
-  formErrors: Array<string>;
-  fieldErrors: {
-    title: Array<string>;
-    content: Array<string>;
-  };
-};
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const note = db.note.findFirst({
@@ -43,64 +36,30 @@ export async function loader({ params }: LoaderFunctionArgs) {
 const titleMaxLength = 100;
 const contentMaxLength = 10000;
 
+const NoteEditorSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(titleMaxLength),
+  content: z.string().min(1, 'Content is required').max(contentMaxLength),
+});
+
 export async function action({ request, params }: ActionFunctionArgs) {
+  invariantResponse(params.noteId, 'noteId param is required');
+
   const formData = await request.formData();
-  const title = formData.get('title');
-  const content = formData.get('content');
 
-  invariantResponse(typeof title === 'string', 'Title must be a string', {
-    status: 400,
+  const result = NoteEditorSchema.safeParse({
+    title: formData.get('title'),
+    content: formData.get('content'),
   });
 
-  invariantResponse(typeof content === 'string', 'Content must be a string', {
-    status: 400,
-  });
-
-  // action runs only on server so adding validation on Server Side
-  const errors: ActionErrors = {
-    formErrors: [],
-    fieldErrors: {
-      title: [],
-      content: [],
-    },
-  };
-
-  if (title === '') {
-    errors.fieldErrors.title.push('Title is required.');
-  }
-
-  if (title.length > titleMaxLength) {
-    errors.fieldErrors.title.push(
-      `Title must be ${titleMaxLength} characters or less.`
-    );
-  }
-
-  if (content === '') {
-    errors.fieldErrors.content.push('Content is required.');
-  }
-
-  if (content.length > contentMaxLength) {
-    errors.fieldErrors.content.push(
-      `Content must be ${titleMaxLength} characters or less.`
-    );
-  }
-
-  const hasErrors =
-    errors.formErrors.length > 0 ||
-    Object.values(errors.fieldErrors).some(
-      (fieldErrors) => fieldErrors.length > 0
-    );
-
-  if (hasErrors) {
-    return json({ status: 'error', errors } as const, {
+  if (!result.success) {
+    return json({ status: 'error', errors: result.error.flatten() } as const, {
       status: 400,
     });
   }
 
-  db.note.update({
-    where: { id: { equals: params.noteId } },
-    data: { title, content },
-  });
+  const { title, content } = result.data;
+
+  await updateNote({ id: params.noteId, title, content });
 
   return redirect(`/users/${params.username}/notes/${params.noteId}`);
 }
@@ -142,9 +101,9 @@ export default function NoteEdit() {
 
   const formHasErrors = Boolean(formErrors?.length);
   const formErrorId = formHasErrors ? 'form-error' : undefined;
-  const titleHasErrors = Boolean(fieldErrors?.title.length);
+  const titleHasErrors = Boolean(fieldErrors?.title?.length);
   const titleErrorId = titleHasErrors ? 'title-error' : undefined;
-  const contentHasErrors = Boolean(fieldErrors?.content.length);
+  const contentHasErrors = Boolean(fieldErrors?.content?.length);
   const contentErrorId = contentHasErrors ? 'content-error' : undefined;
 
   useEffect(() => {
