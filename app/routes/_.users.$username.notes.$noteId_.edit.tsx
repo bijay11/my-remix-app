@@ -14,7 +14,7 @@ import { db } from '#app/utils/db.server';
 import { invariantResponse, useIsSubmitting } from '#app/utils/misc';
 import { StatusButton } from '#app/components/ui/status-button.js';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const note = db.note.findFirst({
@@ -97,11 +97,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   return redirect(`/users/${params.username}/notes/${params.noteId}`);
 }
 
-function ErrorList({ errors }: { errors?: string[] | null }) {
+function ErrorList({ errors, id }: { errors?: string[] | null; id?: string }) {
   return errors?.length ? (
     <ul>
       {errors.map((error, i) => (
-        <li key={i} className="text-[10px] text-foreground-destructive">
+        <li key={i} id={id} className="text-[10px] text-foreground-destructive">
           {error}
         </li>
       ))}
@@ -122,6 +122,7 @@ export default function NoteEdit() {
 
   const isSubmitting = useIsSubmitting();
   const formId = 'note-editor';
+  const titleId = useId();
 
   const fieldErrors =
     actionData?.status === 'error' ? actionData?.errors?.fieldErros : null;
@@ -130,6 +131,13 @@ export default function NoteEdit() {
 
   const isHydrated = useHydrated();
 
+  const formHasErrors = Boolean(formErrors?.length);
+  const formErrorId = formHasErrors ? 'form-error' : undefined;
+  const titleHasErrors = Boolean(fieldErrors?.title.length);
+  const titleErrorId = titleHasErrors ? 'title-error' : undefined;
+  const contentHasErrors = Boolean(fieldErrors?.content.length);
+  const contentErrorId = contentHasErrors ? 'content-error' : undefined;
+
   return (
     <div className="absolute inset-0">
       <Form
@@ -137,42 +145,48 @@ export default function NoteEdit() {
         method="POST"
         className="flex h-full flex-col gap-y-4 overflow-x-hidden px-10 pb-28 pt-12"
         noValidate={isHydrated}
+        aria-invalid={formHasErrors || undefined}
+        aria-describedby={formErrorId}
       >
         <div className="flex flex-col gap-1">
           <div>
-            {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
-            <Label>Title</Label>
+            <Label htmlFor={titleId}>Title</Label>
             <Input
+              id={titleId}
               name="title"
               defaultValue={data.note.title}
               required
               maxLength={titleMaxLength}
+              aria-invalid={titleHasErrors || undefined}
+              aria-describedby={titleErrorId}
             />
             <div className="min-h-[32px] px-4 pb-4 pt-1">
-              <ErrorList errors={fieldErrors?.title} />
+              <ErrorList id={titleErrorId} errors={fieldErrors?.title} />
             </div>
           </div>
           <div>
-            {/* 🦉 NOTE: this is not an accessible label, we'll get to that in the accessibility exercises */}
-            <Label>Content</Label>
+            <Label htmlFor="content-input">Content</Label>
             <Textarea
+              id="content-input"
               name="content"
               defaultValue={data.note.content}
               required
               maxLength={contentMaxLength}
+              aria-invalid={contentHasErrors || undefined}
+              aria-describedby={contentErrorId}
             />
             <div className="min-h-[32px] px-4 pb-4 pt-1">
-              <ErrorList errors={fieldErrors?.content} />
+              <ErrorList id={contentErrorId} errors={fieldErrors?.content} />
             </div>
           </div>
         </div>
 
         <div className="min-h-[32px] px-4 pb-4 pt-1">
-          <ErrorList errors={formErrors} />
+          <ErrorList id={formErrorId} errors={formErrors} />
         </div>
       </Form>
       <div className={floatingToolbarClassName}>
-        <Button variant="destructive" type="reset">
+        <Button variant="destructive" type="reset" form={formId}>
           Reset
         </Button>
         <StatusButton
