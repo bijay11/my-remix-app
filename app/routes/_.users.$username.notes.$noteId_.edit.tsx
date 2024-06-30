@@ -16,6 +16,7 @@ import { db, updateNote } from '#app/utils/db.server';
 import { invariantResponse, useIsSubmitting } from '#app/utils/misc';
 import { StatusButton } from '#app/components/ui/status-button.js';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
+import { parseWithZod } from '@conform-to/zod';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const note = db.note.findFirst({
@@ -42,22 +43,27 @@ const NoteEditorSchema = z.object({
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
+  console.log('=====test submission before');
   invariantResponse(params.noteId, 'noteId param is required');
 
   const formData = await request.formData();
 
-  const result = NoteEditorSchema.safeParse({
-    title: formData.get('title'),
-    content: formData.get('content'),
+  const submission = parseWithZod(formData, {
+    schema: NoteEditorSchema,
   });
 
-  if (!result.success) {
-    return json({ status: 'error', errors: result.error.flatten() } as const, {
-      status: 400,
+  if (submission.status !== 'success') {
+    const failedReply = submission.reply({
+      fieldErrors: {
+        title: ['Title is required'],
+        content: ['Content is required.'],
+      },
     });
+
+    return failedReply;
   }
 
-  const { title, content } = result.data;
+  const { title, content } = submission.value;
 
   await updateNote({ id: params.noteId, title, content });
 
@@ -92,10 +98,11 @@ export default function NoteEdit() {
 
   const formId = 'note-editor';
 
-  const fieldErrors =
-    actionData?.status === 'error' ? actionData?.errors?.fieldErrors : null;
+  console.log('===tesat actionData bb', actionData);
+
+  const fieldErrors = actionData?.status === 'error' ? actionData?.error : null;
   const formErrors =
-    actionData?.status === 'error' ? actionData?.errors?.formErrors : null;
+    actionData?.status === 'error' ? actionData?.error?.[''] : null;
 
   const isHydrated = useHydrated();
 
