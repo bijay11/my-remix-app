@@ -3,10 +3,10 @@
  * for the purposes of our workshop. The data modeling workshop will cover
  * the proper database.
  */
-import crypto from 'crypto';
-import path from 'path';
-import os from 'os';
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { factory, manyOf, nullable, oneOf, primaryKey } from '@mswjs/data';
 import { singleton } from './singleton.server';
 

@@ -36,7 +36,6 @@ app.use((req, res, next) => {
 });
 
 // no ending slashes for SEO reasons
-// https://github.com/epicweb-dev/epic-stack/discussions/108
 app.use((req, res, next) => {
   if (req.path.endsWith('/') && req.path.length > 1) {
     const query = req.url.slice(req.path.length);

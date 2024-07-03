@@ -28,6 +28,10 @@ export async function loader({ params }: LoaderFunctionArgs) {
     note: {
       title: note.title,
       content: note.content,
+      images: note.images.map((image) => ({
+        id: image.id,
+        altText: image.altText,
+      })),
     },
   });
 }
@@ -36,15 +40,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get('intent');
 
-  switch (intent) {
-    case 'delete': {
-      db.note.delete({ where: { id: { equals: params.noteId } } });
-      return redirect(`/users/${params.username}/notes`);
-    }
-    default: {
-      throw new Response(`Invalid intent: ${intent}`, { status: 400 });
-    }
-  }
+  invariantResponse(intent === 'delete', 'Invalid intent');
+
+  db.note.delete({ where: { id: { equals: params.noteId } } });
+  return redirect(`/users/${params.username}/notes`);
 }
 
 export default function NoteRoute() {
@@ -53,6 +52,19 @@ export default function NoteRoute() {
     <div className="absolute inset-0 flex flex-col px-10">
       <h2 className="mb-2 pt-12 text-h2 lg:mb-6">{note.title}</h2>
       <div className="overflow-y-auto pb-24">
+        <ul className="flex flex-wrap gap-5 py-5">
+          {note.images.map((image) => (
+            <li key={image.id}>
+              <a href={`/resources/images/${image.id}`}>
+                <img
+                  src={`/resources/images/${image.id}`}
+                  alt={image.altText ?? ''}
+                  className="h-32 w-32 rounded-lg object-cover"
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
         <p className="whitespace-break-spaces text-sm md:text-lg">
           {note.content}
         </p>
