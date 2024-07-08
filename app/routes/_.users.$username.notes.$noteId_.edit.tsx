@@ -65,7 +65,7 @@ const ImageFiledsetSchema = z.object({
 const NoteEditorSchema = z.object({
   title: z.string().min(1, 'Title is required').max(titleMaxLength),
   content: z.string().min(1, 'Content is required').max(contentMaxLength),
-  image: ImageFiledsetSchema,
+  images: z.array(ImageFiledsetSchema),
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -88,13 +88,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  const { title, content, image } = submission.value;
+  const { title, content, images } = submission.value;
 
   await updateNote({
     id: params.noteId,
     title,
     content,
-    images: [image],
+    images,
   });
 
   return redirect(`/users/${params.username}/notes/${params.noteId}`);
@@ -127,9 +127,11 @@ export default function NoteEdit() {
     defaultValue: {
       title: data.note.title,
       content: data.note.content,
-      image: data.note.images[0],
+      images: data.note.images.length ? data.note.images : [{}],
     },
   });
+
+  const imageList = fields.images.getFieldList();
 
   return (
     <div className="absolute inset-0">
@@ -167,8 +169,12 @@ export default function NoteEdit() {
             </div>
           </div>
           <div>
-            <Label>Image</Label>
-            <ImageChooser image={fields.image} />
+            <Label>Images</Label>
+            <ul className="flex flex-col gap-4">
+              {imageList.map((image) => (
+                <ImageChooser key={image.key} image={image} />
+              ))}
+            </ul>
           </div>
         </div>
 
@@ -281,7 +287,7 @@ function ImageChooser({
           </div>
         </div>
         <div className="flex-1">
-          <Label htmlFor={fields.altText.id}>Altasdadsa Text</Label>
+          <Label htmlFor={fields.altText.id}>Image Description</Label>
           <Textarea
             {...getTextareaProps(fields.altText)}
             onChange={(e) => setAltText(e.currentTarget.value)}
