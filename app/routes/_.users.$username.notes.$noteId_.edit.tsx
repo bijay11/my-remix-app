@@ -9,7 +9,13 @@ import {
 import { Form, useActionData, useLoaderData } from '@remix-run/react';
 import { z } from 'zod';
 import { parseWithZod, getZodConstraint } from '@conform-to/zod';
-import { getFormProps, useForm, getInputProps } from '@conform-to/react';
+import {
+  getFormProps,
+  useForm,
+  FieldMetadata,
+  getInputProps,
+  getTextareaProps,
+} from '@conform-to/react';
 import { floatingToolbarClassName } from '#app/components/floating-toolbar';
 import { Button } from '#app/components/ui/button';
 import { Input } from '#app/components/ui/input';
@@ -19,7 +25,7 @@ import { db, updateNote } from '#app/utils/db.server';
 import { cn, invariantResponse, useIsSubmitting } from '#app/utils/misc';
 import { StatusButton } from '#app/components/ui/status-button.js';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const note = db.note.findFirst({
@@ -46,10 +52,20 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 const titleMaxLength = 100;
 const contentMaxLength = 10000;
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 3;
+
+const ImageFiledsetSchema = z.object({
+  id: z.string().optional(),
+  altText: z.string().optional(),
+  file: z
+    .instanceof(File)
+    .refine((file) => file.size <= MAX_UPLOAD_SIZE, 'File is too large.'),
+});
 
 const NoteEditorSchema = z.object({
   title: z.string().min(1, 'Title is required').max(titleMaxLength),
   content: z.string().min(1, 'Content is required').max(contentMaxLength),
+  image: ImageFiledsetSchema,
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -58,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await parseMultipartFormData(
     request,
     createMemoryUploadHandler({
-      maxPartSize: 1024 * 1024 * 3,
+      maxPartSize: MAX_UPLOAD_SIZE,
     })
   );
 
@@ -72,19 +88,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  const { title, content } = submission.value;
+  const { title, content, image } = submission.value;
 
   await updateNote({
     id: params.noteId,
     title,
     content,
-    images: [
-      {
-        id: formData.get('imageId') ?? '',
-        file: formData.get('file') ?? null,
-        altText: formData.get('altText') ?? null,
-      },
-    ],
+    images: [image],
   });
 
   return redirect(`/users/${params.username}/notes/${params.noteId}`);
@@ -117,6 +127,7 @@ export default function NoteEdit() {
     defaultValue: {
       title: data.note.title,
       content: data.note.content,
+      image: data.note.images[0],
     },
   });
 
@@ -132,6 +143,7 @@ export default function NoteEdit() {
           <div>
             <Label htmlFor={fields.title.id}>Title</Label>
             <Input
+              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               {...getInputProps(fields.title, {
                 type: 'text',
@@ -156,7 +168,7 @@ export default function NoteEdit() {
           </div>
           <div>
             <Label>Image</Label>
-            <ImageChooser image={data.note.images[0]} />
+            <ImageChooser image={fields.image} />
           </div>
         </div>
 
@@ -196,22 +208,27 @@ export function ErrorBoundary() {
 function ImageChooser({
   image,
 }: {
-  image?: { id: string; altText?: string | null };
+  image: FieldMetadata<z.infer<typeof ImageFiledsetSchema>>;
 }) {
-  const existingImage = Boolean(image);
+  const ref = useRef<HTMLFieldSetElement>(null);
+  const fields = image.getFieldset();
+  const existingImage = Boolean(fields.id.initialValue);
+
   const [previewImage, setPreviewImage] = useState<string | null>(
-    existingImage ? `/resources/images/${image?.id}` : null
+    existingImage ? `/resources/images/${fields.id.initialValue}` : null
   );
 
-  const [altText, setAltText] = useState<string>(image?.altText ?? '');
+  const [altText, setAltText] = useState<string>(
+    fields.altText.initialValue ?? ''
+  );
 
   return (
-    <fieldset>
+    <fieldset ref={ref}>
       <div className="flex gap-3">
         <div className="w-32">
           <div className="relative h-32 w-32">
             <label
-              htmlFor="image-input"
+              htmlFor={fields.id.id}
               className={cn('group absolute h-32 w-32 rounded-lg', {
                 'bg-accent opacity-40 focus-within:opacity-100 hover:opacity-100':
                   !previewImage,
@@ -237,10 +254,9 @@ function ImageChooser({
                 </div>
               )}
               {existingImage && (
-                <input type="hidden" name="imageId" value={image?.id} />
+                <input {...getInputProps(fields.id, { type: 'hidden' })} />
               )}
               <input
-                id="image-input"
                 aria-label="Image"
                 className="absolute left-0 top-0 z-0 h-32 w-32 cursor-pointer opacity-0"
                 onChange={(event) => {
@@ -256,19 +272,18 @@ function ImageChooser({
                     setPreviewImage(null);
                   }
                 }}
-                name="file"
-                type="file"
                 accept="image/*"
+                {...getInputProps(fields.file, {
+                  type: 'file',
+                })}
               />
             </label>
           </div>
         </div>
         <div className="flex-1">
-          <Label htmlFor="alt-text">Alt Text</Label>
+          <Label htmlFor={fields.altText.id}>Altasdadsa Text</Label>
           <Textarea
-            id="alt-text"
-            name="altText"
-            defaultValue={altText}
+            {...getTextareaProps(fields.altText)}
             onChange={(e) => setAltText(e.currentTarget.value)}
           />
         </div>
