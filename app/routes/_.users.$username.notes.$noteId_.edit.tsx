@@ -82,6 +82,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     schema: NoteEditorSchema,
   });
 
+  // TODO: check this functionality
+  if (submission.reply().intent) {
+    return json({ status: 'idle', submission } as const);
+  }
+
   if (submission.status !== 'success') {
     return json({ status: 'error', submission } as const, {
       status: 400,
@@ -141,6 +146,7 @@ export default function NoteEdit() {
         {...getFormProps(form)}
         encType="multipart/form-data"
       >
+        <button type="submit" className="hidden" />
         <div className="flex flex-col gap-1">
           <div>
             <Label htmlFor={fields.title.id}>Title</Label>
@@ -171,11 +177,37 @@ export default function NoteEdit() {
           <div>
             <Label>Images</Label>
             <ul className="flex flex-col gap-4">
-              {imageList.map((image) => (
-                <ImageChooser key={image.key} image={image} />
-              ))}
+              {imageList.map((image, index) => {
+                return (
+                  <li
+                    key={image.key}
+                    className="relative border-b-2 border-muted-foreground"
+                  >
+                    <ImageChooser image={image} />
+                    <button
+                      {...form.remove.getButtonProps({
+                        name: fields.images.name,
+                        index,
+                      })}
+                      className="text-foreground-destructive absolute right-0 top-0"
+                    >
+                      <span className="sr-only">Delete</span>
+                      <span aria-hidden>❌</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
+          <Button
+            {...form.insert.getButtonProps({
+              name: fields.images.name,
+              defaultValue: {},
+            })}
+          >
+            <span className="sr-only">Add Image</span>
+            <span aria-hidden>➕ Image </span>
+          </Button>
         </div>
 
         <div className="min-h-[32px] px-4 pb-4 pt-1">
