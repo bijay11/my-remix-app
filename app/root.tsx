@@ -14,6 +14,8 @@ import fontStylesUrl from './styles/font.css?url';
 import tailwindStylesUrl from './styles/tailwind.css?url';
 import { getEnv } from './utils/env.server';
 import { GeneralErrorBoundary } from './components/error-boundary';
+import { honeypot } from './utils/honeypot.server';
+import { HoneypotProvider } from 'remix-utils/honeypot/react';
 
 export const links: LinksFunction = () => {
   return [
@@ -23,7 +25,8 @@ export const links: LinksFunction = () => {
 };
 
 export async function loader() {
-  return json({ username: os.userInfo().username, ENV: getEnv() });
+  const honeyProps = honeypot.getInputProps();
+  return json({ username: os.userInfo().username, ENV: getEnv(), honeyProps });
 }
 
 function Document({ children }: { children: React.ReactNode }) {
@@ -45,7 +48,7 @@ function Document({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+function App() {
   const data = useLoaderData<typeof loader>();
 
   return (
@@ -68,6 +71,15 @@ export default function App() {
         }}
       />
     </Document>
+  );
+}
+
+export default function AppWithProviders() {
+  const data = useLoaderData<typeof loader>();
+  return (
+    <HoneypotProvider {...data.honeyProps}>
+      <App />
+    </HoneypotProvider>
   );
 }
 
