@@ -1,5 +1,9 @@
 import os from 'node:os';
-import { json, type LinksFunction } from '@remix-run/node';
+import {
+  type ActionFunctionArgs,
+  type LinksFunction,
+  json,
+} from '@remix-run/node';
 import {
   Link,
   Links,
@@ -16,6 +20,7 @@ import { getEnv } from './utils/env.server';
 import { GeneralErrorBoundary } from './components/error-boundary';
 import { honeypot } from './utils/honeypot.server';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
+import { csrf } from './utils/csrf.server';
 
 export const links: LinksFunction = () => {
   return [
@@ -24,9 +29,19 @@ export const links: LinksFunction = () => {
   ];
 };
 
-export async function loader() {
+export async function loader({ request }: ActionFunctionArgs) {
   const honeyProps = honeypot.getInputProps();
-  return json({ username: os.userInfo().username, ENV: getEnv(), honeyProps });
+  const [csrfToken, csrfCookieHeader] = await csrf.commitToken(request);
+  return json(
+    { username: os.userInfo().username, ENV: getEnv(), honeyProps, csrfToken },
+    {
+      headers: csrfCookieHeader
+        ? {
+            'set-cookie': csrfCookieHeader,
+          }
+        : {},
+    }
+  );
 }
 
 function Document({ children }: { children: React.ReactNode }) {
