@@ -10,6 +10,9 @@ import { db } from '#app/utils/db.server.js';
 import { invariantResponse } from '#app/utils/misc.js';
 import { floatingToolbarClassName } from '#app/components/floating-toolbar';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
+import { AuthenticityTokenInput } from 'remix-utils/csrf/react';
+import { csrf } from '#app/utils/csrf.server.js';
+import { CSRFError } from 'remix-utils/csrf/server';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { noteId } = params;
@@ -38,6 +41,15 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
+  try {
+    await csrf.validate(formData, request.headers);
+  } catch (error) {
+    if (error instanceof CSRFError) {
+      throw new Response('Invalid CSRF Token', { status: 403 });
+    }
+    throw error;
+  }
+
   const intent = formData.get('intent');
 
   invariantResponse(intent === 'delete', 'Invalid intent');
@@ -71,6 +83,7 @@ export default function NoteRoute() {
       </div>
       <div className={floatingToolbarClassName}>
         <Form method="POST">
+          <AuthenticityTokenInput />
           <Button
             variant="destructive"
             type="submit"

@@ -21,6 +21,7 @@ import { GeneralErrorBoundary } from './components/error-boundary';
 import { honeypot } from './utils/honeypot.server';
 import { HoneypotProvider } from 'remix-utils/honeypot/react';
 import { csrf } from './utils/csrf.server';
+import { AuthenticityTokenProvider } from 'remix-utils/csrf/react';
 
 export const links: LinksFunction = () => {
   return [
@@ -92,9 +93,11 @@ function App() {
 export default function AppWithProviders() {
   const data = useLoaderData<typeof loader>();
   return (
-    <HoneypotProvider {...data.honeyProps}>
-      <App />
-    </HoneypotProvider>
+    <AuthenticityTokenProvider token={data.csrfToken}>
+      <HoneypotProvider {...data.honeyProps}>
+        <App />
+      </HoneypotProvider>
+    </AuthenticityTokenProvider>
   );
 }
 
