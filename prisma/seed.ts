@@ -3,15 +3,23 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const firstNote = await prisma.note.findFirst();
+await prisma.user.deleteMany();
 
-if (!firstNote) {
-  throw new Error('You need to have a note in the database first');
-}
-
-await prisma.note.update({
-  where: { id: firstNote.id },
+const testUser = await prisma.user.create({
   data: {
+    email: 'testuser@testUser.com',
+    username: 'testUser',
+    name: 'testUser',
+  },
+});
+
+await prisma.note.create({
+  data: {
+    id: 'a5c8f34b',
+    title: 'Interesting Fact',
+    content:
+      'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still perfectly edible.',
+    ownerId: testUser.id,
     images: {
       create: [
         {

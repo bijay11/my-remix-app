@@ -67,6 +67,15 @@
     "vite": "^5.1.0",
     "vite-tsconfig-paths": "^4.2.1"
   },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
+  "eslintIgnore": [
+    "/node_modules",
+    "/build",
+    "/public/build",
+    "/server-build"
+  ],
   "engines": {
     "node": ">=20.0.0"
   }
