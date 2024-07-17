@@ -1,18 +1,28 @@
 import fs from 'node:fs';
 import { faker } from '@faker-js/faker';
 import { PrismaClient } from '@prisma/client';
+import { UniqueEnforcer } from 'enforce-unique';
 import { promiseHash } from 'remix-utils/promise';
 
 const prisma = new PrismaClient();
 
-// await prisma.user.deleteMany();
+const uniqueEnforcer = new UniqueEnforcer();
 
 export function createUser() {
   const firstName = faker.person.firstName();
   const lastName = faker.person.lastName();
-  const username = faker.internet.userName({
-    firstName: firstName.toLowerCase(),
-    lastName: lastName.toLowerCase(),
+  const username = uniqueEnforcer.enforce(() => {
+    return (
+      faker.string.alphanumeric({ length: 2 }) +
+      '_' +
+      faker.internet.userName({
+        firstName: firstName.toLowerCase(),
+        lastName: lastName.toLowerCase(),
+      })
+    )
+      .slice(0, 20)
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_');
   });
 
   return {
@@ -45,7 +55,6 @@ async function seed() {
   console.timeEnd('🧹 Cleaned up the database...');
 
   const totalUsers = 5;
-  console.time(`👤 Created ${totalUsers} users...`);
 
   const noteImages = await Promise.all([
     img({
@@ -98,30 +107,34 @@ async function seed() {
   );
 
   for (let i = 0; i < totalUsers; i++) {
-    await prisma.user.create({
-      data: {
-        ...createUser(),
-        image: { create: userImages[i % 10] },
-        notes: {
-          create: Array.from({
-            length: faker.number.int({ min: 0, max: 3 }),
-          }).map(() => {
-            return {
-              title: faker.lorem.sentence(),
-              content: faker.lorem.paragraphs(),
-              images: {
-                create: Array.from({
-                  length: faker.number.int({ min: 0, max: 3 }),
-                }).map(() => {
-                  const imageNumber = faker.number.int({ min: 0, max: 9 });
-                  return noteImages[imageNumber];
-                }),
-              },
-            };
-          }),
+    await prisma.user
+      .create({
+        data: {
+          ...createUser(),
+          image: { create: userImages[i % 10] },
+          notes: {
+            create: Array.from({
+              length: faker.number.int({ min: 0, max: 3 }),
+            }).map(() => {
+              return {
+                title: faker.lorem.sentence(),
+                content: faker.lorem.paragraphs(),
+                images: {
+                  create: Array.from({
+                    length: faker.number.int({ min: 0, max: 3 }),
+                  }).map(() => {
+                    const imageNumber = faker.number.int({ min: 0, max: 9 });
+                    return noteImages[imageNumber];
+                  }),
+                },
+              };
+            }),
+          },
         },
-      },
-    });
+      })
+      .catch((e) => {
+        console.log(e);
+      });
   }
 
   console.timeEnd(`👤 Created ${totalUsers} users...`);
