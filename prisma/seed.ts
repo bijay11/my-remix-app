@@ -103,17 +103,22 @@ async function seed() {
         ...createUser(),
         image: { create: userImages[i % 10] },
         notes: {
-          create: [
-            {
+          create: Array.from({
+            length: faker.number.int({ min: 0, max: 3 }),
+          }).map(() => {
+            return {
               title: faker.lorem.sentence(),
               content: faker.lorem.paragraphs(),
-              // 🐨 add a random number of random images to the notes (0-3)
-            },
-            {
-              title: faker.lorem.sentence(),
-              content: faker.lorem.paragraphs(),
-            },
-          ],
+              images: {
+                create: Array.from({
+                  length: faker.number.int({ min: 0, max: 3 }),
+                }).map(() => {
+                  const imageNumber = faker.number.int({ min: 0, max: 9 });
+                  return noteImages[imageNumber];
+                }),
+              },
+            };
+          }),
         },
       },
     });
@@ -124,26 +129,26 @@ async function seed() {
   console.time(`🐨 Created user "testUser"`);
 
   const testUserImages = await promiseHash({
-    bird: img({ filepath: './tests/fixtures/images/user/bird.png' }),
+    bird: img({ filepath: './tests/fixtures/images/user/testuser.jpg' }),
     bridge: img({
       altText: 'its a bridge',
-      filepath: './tests/fixtures/images/user/bridge.png',
+      filepath: './tests/fixtures/images/user-notes/bridge.jpg',
     }),
     highway: img({
       altText: 'its a highway',
-      filepath: './tests/fixtures/images/user/highway.png',
+      filepath: './tests/fixtures/images/user-notes/highway.jpg',
     }),
     mountain: img({
       altText: 'its a mountain',
-      filepath: './tests/fixtures/images/user/mountain.png',
+      filepath: './tests/fixtures/images/user-notes/mountain.jpg',
     }),
     scenary: img({
       altText: 'its a scenary',
-      filepath: './tests/fixtures/images/user/scenary.png',
+      filepath: './tests/fixtures/images/user-notes/scenary.jpg',
     }),
     relax: img({
       altText: 'its a relax',
-      filepath: './tests/fixtures/images/user/relax.png',
+      filepath: './tests/fixtures/images/user-notes/relax.jpg',
     }),
   });
 
@@ -152,6 +157,7 @@ async function seed() {
       email: 'testUser@test.com',
       username: 'testUser',
       name: 'testUser',
+      image: { create: testUserImages.bird },
       notes: {
         create: [
           {
@@ -160,22 +166,7 @@ async function seed() {
             content:
               'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still perfectly edible.',
             images: {
-              create: [
-                {
-                  altText: 'A beautiful bird',
-                  contentType: 'image/jpg',
-                  blob: await fs.promises.readFile(
-                    './tests/fixtures/images/user-notes/bird.jpg'
-                  ),
-                },
-                {
-                  altText: 'San Francisco bridge',
-                  contentType: 'image/jpg',
-                  blob: await fs.promises.readFile(
-                    './tests/fixtures/images/user-notes/bridge.jpg'
-                  ),
-                },
-              ],
+              create: [testUserImages.bridge, testUserImages.highway],
             },
           },
         ],
@@ -183,7 +174,7 @@ async function seed() {
     },
   });
 
-  console.timeEnd(`🐨 Created user "kody"`);
+  console.timeEnd('Created user');
 
   console.timeEnd(`🌱 Database has been seeded`);
 }
