@@ -36,8 +36,9 @@ export const prisma = singleton('prisma', () => {
         : e.duration < logThreshold * 1.4
         ? 'redBright'
         : 'red';
-    const dur = chalk[color](`${e.duration}ms`);
-    console.info(`prisma:query - ${dur} - ${e.query}`);
+
+    const duration = chalk[color](`${e.duration}ms`);
+    console.info(`prisma:query - duration: ${duration} - query: ${e.query}`);
   });
 
   // this will make the connection faster
@@ -46,7 +47,7 @@ export const prisma = singleton('prisma', () => {
   return client;
 });
 
-console.log(await prisma.user.findMany());
+// console.log(await prisma.user.findMany());
 
 const getId = () => crypto.randomBytes(16).toString('hex').slice(0, 8);
 

@@ -2,6 +2,13 @@ import { useFormAction, useNavigation } from '@remix-run/react';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+// TODO: fix this
+// import userFallback from '#app/assets/user.png';
+
+export function getUserImgSrc(imageId?: string | null) {
+  return imageId ? `/resources/user-images/${imageId}` : '';
+}
+
 /**
  * A handy utility that makes constructing class names easier.
  * It also merges tailwind classes.
