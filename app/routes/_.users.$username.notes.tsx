@@ -1,43 +1,33 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node';
 import { Link, Outlet, NavLink, useLoaderData } from '@remix-run/react';
-import { db } from '#app/utils/db.server.js';
+import { prisma } from '#app/utils/db.server.js';
 import { cn, invariantResponse } from '#app/utils/misc.js';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { username } = params;
 
-  const owner = db.user.findFirst({
-    where: {
-      username: {
-        equals: username,
-      },
-    },
-  });
-
-  const notes = db.note.findMany({
-    where: {
-      owner: {
-        username: {
-          equals: username,
-        },
+  const owner = await prisma.user.findUnique({
+    where: { username },
+    select: {
+      name: true,
+      username: true,
+      image: { select: { id: true } },
+      notes: {
+        select: { id: true, title: true },
       },
     },
   });
 
   invariantResponse(owner, 'Owner not found', { status: 404 });
 
-  return json({
-    owner: {
-      name: owner.name,
-      username: owner.username,
-    },
-    notes: notes.map(({ id, title }) => ({ id, title })),
-  });
+  console.log('====test owner', owner);
+
+  return json({ owner });
 }
 
 export default function NotesRoute() {
-  const { owner, notes } = useLoaderData<typeof loader>();
+  const { owner } = useLoaderData<typeof loader>();
 
   const ownerDisplayName = owner.name ?? owner.username;
 
@@ -58,7 +48,7 @@ export default function NotesRoute() {
               </h1>
             </Link>
             <ul className="overflow-y-auto overflow-x-hidden pb-12">
-              {notes.map((note) => (
+              {owner.notes.map((note) => (
                 <li key={note.id} className="p-1 pr-0">
                   <NavLink
                     to={note.id}
