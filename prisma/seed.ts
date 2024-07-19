@@ -114,14 +114,14 @@ async function seed() {
           image: { create: userImages[i % 10] },
           notes: {
             create: Array.from({
-              length: faker.number.int({ min: 0, max: 3 }),
+              length: faker.number.int({ min: 1, max: 3 }),
             }).map(() => {
               return {
-                title: faker.lorem.sentence(),
+                title: faker.lorem.sentence({ min: 1, max: 3 }),
                 content: faker.lorem.paragraphs(),
                 images: {
                   create: Array.from({
-                    length: faker.number.int({ min: 0, max: 3 }),
+                    length: faker.number.int({ min: 1, max: 3 }),
                   }).map(() => {
                     const imageNumber = faker.number.int({ min: 0, max: 9 });
                     return noteImages[imageNumber];
