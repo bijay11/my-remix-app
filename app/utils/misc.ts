@@ -9,6 +9,10 @@ export function getUserImgSrc(imageId?: string | null) {
   return imageId ? `/resources/user-images/${imageId}` : '';
 }
 
+export function getNoteImgSrc(imageId: string) {
+  return `/resources/note-images/${imageId}`;
+}
+
 /**
  * A handy utility that makes constructing class names easier.
  * It also merges tailwind classes.

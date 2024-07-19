@@ -253,7 +253,7 @@ function ImageChooser({
   const existingImage = Boolean(fields.id.initialValue);
 
   const [previewImage, setPreviewImage] = useState<string | null>(
-    existingImage ? `/resources/images/${fields.id.initialValue}` : null
+    existingImage ? `/resources/user-images/${fields.id.initialValue}` : null
   );
 
   const [altText, setAltText] = useState<string>(

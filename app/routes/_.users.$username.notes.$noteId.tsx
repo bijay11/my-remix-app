@@ -7,7 +7,7 @@ import {
 } from '@remix-run/node';
 import { Button } from '#app/components/ui/button';
 import { prisma } from '#app/utils/db.server.js';
-import { invariantResponse } from '#app/utils/misc.js';
+import { getNoteImgSrc, invariantResponse } from '#app/utils/misc.js';
 import { floatingToolbarClassName } from '#app/components/floating-toolbar';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
 import { AuthenticityTokenInput } from 'remix-utils/csrf/react';
@@ -69,9 +69,9 @@ export default function NoteRoute() {
         <ul className="flex flex-wrap gap-5 py-5">
           {note.images.map((image) => (
             <li key={image.id}>
-              <a href={`/resources/images/${image.id}`}>
+              <a href={getNoteImgSrc(image.id)}>
                 <img
-                  src={`/resources/images/${image.id}`}
+                  src={getNoteImgSrc(image.id)}
                   alt={image.altText ?? ''}
                   className="h-32 w-32 rounded-lg object-cover"
                 />
