@@ -39,8 +39,6 @@ export default function UsernameRoute() {
   const { user, userJoinedDisplay } = useLoaderData<typeof loader>();
   const userDisplayName = user.name ?? user.username;
 
-  console.log('==== test user', user);
-
   return (
     <div className="container mb-48 mt-36 flex flex-col items-center justify-center">
       <Spacer size="4xs" />

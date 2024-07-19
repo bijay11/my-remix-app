@@ -6,7 +6,7 @@ import {
   type LoaderFunctionArgs,
 } from '@remix-run/node';
 import { Button } from '#app/components/ui/button';
-import { db } from '#app/utils/db.server.js';
+import { prisma } from '#app/utils/db.server.js';
 import { invariantResponse } from '#app/utils/misc.js';
 import { floatingToolbarClassName } from '#app/components/floating-toolbar';
 import { GeneralErrorBoundary } from '#app/components/error-boundary.js';
@@ -15,12 +15,13 @@ import { csrf } from '#app/utils/csrf.server.js';
 import { CSRFError } from 'remix-utils/csrf/server';
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const { noteId } = params;
-
-  const note = db.note.findFirst({
-    where: {
-      id: {
-        equals: noteId,
+  const note = await prisma.note.findFirst({
+    where: { id: params.noteId },
+    select: {
+      title: true,
+      content: true,
+      images: {
+        select: { id: true, altText: true },
       },
     },
   });
@@ -54,12 +55,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   invariantResponse(intent === 'delete', 'Invalid intent');
 
-  db.note.delete({ where: { id: { equals: params.noteId } } });
+  await prisma.note.delete({ where: { id: params.noteId } });
   return redirect(`/users/${params.username}/notes`);
 }
 
 export default function NoteRoute() {
   const { note } = useLoaderData<typeof loader>();
+
   return (
     <div className="absolute inset-0 flex flex-col px-10">
       <h2 className="mb-2 pt-12 text-h2 lg:mb-6">{note.title}</h2>
